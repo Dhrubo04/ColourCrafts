@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Analytics } from "@vercel/analytics/react"
 import {
   Square,
   Circle,
