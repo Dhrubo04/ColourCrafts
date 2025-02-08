@@ -459,7 +459,33 @@ const FlowDraw = () => {
     setIsDrawing(false);
   };
 
-  // --- Canvas Mouse Events ---
+  // --- Touch Event Helpers ---
+  const getTouchEventData = (e) => {
+    // Prevent scrolling when touching the canvas.
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0] || e.changedTouches[0];
+    return { nativeEvent: { offsetX: touch.clientX - rect.left, offsetY: touch.clientY - rect.top } };
+  };
+
+  const handleTouchStart = (e) => {
+    const syntheticEvent = getTouchEventData(e);
+    handleCanvasMouseDown(syntheticEvent);
+  };
+
+  const handleTouchMove = (e) => {
+    const syntheticEvent = getTouchEventData(e);
+    handleCanvasMouseMove(syntheticEvent);
+  };
+
+  const handleTouchEnd = (e) => {
+    // Use changedTouches for touchend.
+    const syntheticEvent = getTouchEventData(e);
+    handleCanvasMouseUp(syntheticEvent);
+  };
+
+  // --- Canvas Mouse/Touch Events ---
   const handleCanvasMouseDown = (e) => {
     if (tool === 'eraser') {
       handleEraser(e);
@@ -469,7 +495,6 @@ const FlowDraw = () => {
       if (checkForResizeHandle(e)) return;
       selectElement(e);
     } else if (tool === 'text') {
-      // For text, simply show the input field.
       const { offsetX, offsetY } = e.nativeEvent;
       setEditingText({ visible: true, x: offsetX, y: offsetY, text: '', fontSize: 16 });
       return;
@@ -551,7 +576,7 @@ const FlowDraw = () => {
       drawElement(ctx, element);
     });
     
-    // Draw live (current) element with a dotted overlay and handles.
+    // Draw live (current) element with dotted overlay and handles.
     if (currentElement && tool !== 'text') {
       drawElement(ctx, currentElement);
       const bbox = computeBoundingBox(currentElement);
@@ -731,7 +756,14 @@ const FlowDraw = () => {
           onMouseMove={handleCanvasMouseMove}
           onMouseUp={handleCanvasMouseUp}
           onMouseLeave={handleCanvasMouseUp}
-          style={{ cursor: tool === 'select' ? 'default' : 'crosshair', border: '1px solid lightgray' }}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          style={{ 
+            cursor: tool === 'select' ? 'default' : 'crosshair',
+            border: '1px solid lightgray',
+            touchAction: 'none'  // Prevents default scrolling on touch devices.
+          }}
           className="bg-white canvas"
         />
         {editingText.visible && (
